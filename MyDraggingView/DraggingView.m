@@ -11,48 +11,49 @@
 @interface DraggingView()
 @property NSPoint downPoint;
 @property NSPoint currentPoint;
+@property BOOL isUsing;
 @end
 
 @implementation DraggingView
 
 - (void)drawRect:(NSRect)dirtyRect {
     [super drawRect:dirtyRect];
-    
     // Drawing code here.
+    
 }
 
 #pragma mark Events
 - (void)mouseDown:(NSEvent *)event
 {
-    NSPoint p = [event locationInWindow];
-    _downPoint = [self convertPoint:p fromView:nil];
+    _downPoint = [event locationInWindow];
     _currentPoint = _downPoint;
     [self setNeedsDisplay:YES];
 }
 - (void)mouseDragged:(NSEvent *)event
 {
     NSPoint previousPoint = _currentPoint;
-    NSPoint p = [event locationInWindow];
-    _currentPoint = [self convertPoint:p fromView:nil];
+    _currentPoint = [event locationInWindow];
+    
+    NSLog(@"\n%.2f, %.2f\n%.2f, %.2f", _currentPoint.x, _currentPoint.y , previousPoint.x, previousPoint.y);
     
     // ウィンドウの位置を移動させる
     double offset_x = _currentPoint.x - previousPoint.x;
     double offset_y = _currentPoint.y - previousPoint.y;
     NSRect windowFrame = self.window.frame;
-    windowFrame.origin.x += offset_x;
-    windowFrame.origin.y += offset_y;
-    [self.window setFrame:windowFrame display:YES];
+    NSPoint windowOrigin = windowFrame.origin;
     
-    NSLog(@"%f, %f", offset_x, offset_y );
+    windowOrigin.x += offset_x;
+    windowOrigin.y += offset_y;
+    _currentPoint.x -= offset_x;    // ウィンドウの位置が変わったので、相対的に現在のマウスの位置を変更してやる
+    _currentPoint.y -= offset_y;
+    [self.window setFrameOrigin:windowOrigin];
     
-//    NSLog(@"%@", _currentPoint);
     [self autoscroll:event];
     [self setNeedsDisplay:YES];
 }
 - (void)mouseUp:(NSEvent *)event
 {
-    NSPoint p = [event locationInWindow];
-    _currentPoint = [self convertPoint:p fromView:nil];
+    _currentPoint = [event locationInWindow];
     [self setNeedsDisplay:YES];
 }
 
