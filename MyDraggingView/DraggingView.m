@@ -9,9 +9,7 @@
 #import "DraggingView.h"
 
 @interface DraggingView()
-@property NSPoint downPoint;
 @property NSPoint currentPoint;
-@property BOOL isUsing;
 @end
 
 @implementation DraggingView
@@ -19,41 +17,40 @@
 - (void)drawRect:(NSRect)dirtyRect {
     [super drawRect:dirtyRect];
     // Drawing code here.
-    
+    // 分かりやすいようにビューに色を付ける
+    NSRect bounds = [self bounds];
+    [[[NSColor blueColor] colorWithAlphaComponent:0.1] set];
+    [NSBezierPath fillRect:bounds];
 }
 
 #pragma mark Events
-- (void)mouseDown:(NSEvent *)event
-{
-    _downPoint = [event locationInWindow];
-    _currentPoint = _downPoint;
+- (void)mouseDown:(NSEvent *)event {
+    NSPoint p = [event locationInWindow];
+    _currentPoint = [self convertPoint:p fromView:nil]; // viewの座標系に変換
     [self setNeedsDisplay:YES];
 }
-- (void)mouseDragged:(NSEvent *)event
-{
+
+- (void)mouseDragged:(NSEvent *)event {
     NSPoint previousPoint = _currentPoint;
-    _currentPoint = [event locationInWindow];
+    NSPoint p = [event locationInWindow];
+    _currentPoint = [self convertPoint:p fromView:nil]; // viewの座標系に変換
     
-    NSLog(@"\n%.2f, %.2f\n%.2f, %.2f", _currentPoint.x, _currentPoint.y , previousPoint.x, previousPoint.y);
-    
-    // ウィンドウの位置を移動させる
-    double offset_x = _currentPoint.x - previousPoint.x;
-    double offset_y = _currentPoint.y - previousPoint.y;
-    NSRect windowFrame = self.window.frame;
-    NSPoint windowOrigin = windowFrame.origin;
-    
-    windowOrigin.x += offset_x;
-    windowOrigin.y += offset_y;
-    _currentPoint.x -= offset_x;    // ウィンドウの位置が変わったので、相対的に現在のマウスの位置を変更してやる
-    _currentPoint.y -= offset_y;
-    [self.window setFrameOrigin:windowOrigin];
-    
-    [self autoscroll:event];
+    // 移動したマウスの距離だけウィンドウの位置を移動させる
+    double  distance_x   = _currentPoint.x - previousPoint.x;
+    double  distance_y   = _currentPoint.y - previousPoint.y;
+    NSRect  windowFrame  = self.window.frame;
+    NSPoint windowOrigin = windowFrame.origin; // 現在のウィンドウ位置
+    windowOrigin.x  += distance_x;
+    windowOrigin.y  += distance_y;
+    _currentPoint.x -= distance_x;             // ウィンドウの位置が変わったので、次のマウス移動の計算のために補正を行う
+    _currentPoint.y -= distance_y;
+    [self.window setFrameOrigin:windowOrigin]; // ウィンドウの位置を移動
     [self setNeedsDisplay:YES];
 }
-- (void)mouseUp:(NSEvent *)event
-{
-    _currentPoint = [event locationInWindow];
+
+- (void)mouseUp:(NSEvent *)event {
+    NSPoint p = [event locationInWindow];
+    _currentPoint = [self convertPoint:p fromView:nil]; // viewの座標系に変換
     [self setNeedsDisplay:YES];
 }
 
